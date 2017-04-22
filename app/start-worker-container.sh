@@ -15,7 +15,7 @@ docker run \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -e BROKER="$BROKER" \
   -e BACKEND="$BACKEND" \
-  -e STANDALONE=1 \
+  -e CONTAINERIZE=1 \
   -w /runner/app \
   alvelazq/runner \
     celery worker -A runner

@@ -23,6 +23,6 @@ if len(sys.argv) < 2:
     print('Usage: dispatcher.py <folder1> [folder2 ... folderN]')
     sys.exit(1)
 
-results = list(map(dispatch, chain.from_iterable(get_files(f, '.py$') for f in sys.argv[1:])))
+results = [dispatch(f) for d in sys.argv[1:] for f in get_files(d, '.py$')]
 
-list(map(print, results))
+[print(r.get()) for r in results]
