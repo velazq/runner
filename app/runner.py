@@ -7,7 +7,8 @@ import tempfile
 
 
 RUNNER_IMAGE = 'python' # Must have python3 in path
-INTERNAL_FILE = '/tmp/test.py'
+RUNNER_IMAGE_NAME = 'runner-ctrl'
+VOLUME = '/data'
 
 
 if not os.environ.get('BROKER') or not os.environ.get('BACKEND'):
@@ -30,9 +31,8 @@ app = celery.Celery('runner',
                     broker=os.environ['BROKER'],
                     backend=os.environ['BACKEND'])
 
-
 def make_temp_file(contents):
-    f = tempfile.NamedTemporaryFile(mode='w', dir='/tmp')
+    f = tempfile.NamedTemporaryFile(mode='w', dir=VOLUME, suffix='.py')
     f.write(contents)
     f.flush()
     return f
@@ -43,20 +43,16 @@ def run_and_shutdown(task_id, source_code):
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE)
     (stdoutdata, stderrdata) = p.communicate()
-    f.close()
     subprocess.call('celery control shutdown'.split())
     return {'task_id': task_id, 'stdout': stdoutdata.decode(encoding)}
 
 def run_in_container(task_id, source_code):
     f = make_temp_file(source_code)
-    volumes = {f.name: {'bind': INTERNAL_FILE, 'mode': 'ro'}}
     logs = client.containers.run(image=RUNNER_IMAGE,
-                                 command=['python3', INTERNAL_FILE],
-                                 volumes=volumes,
+                                 command=['python3', f.name],
+                                 volumes_from=[RUNNER_IMAGE_NAME],
                                  remove=True)
-    f.close()
     return {'task_id': task_id, 'stdout': logs.decode(encoding)}
-
 
 @app.task
 def run(task_id, source_code):

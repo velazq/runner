@@ -9,10 +9,11 @@ if [[ ! "$BROKER" ]] || [[ ! "$BACKEND" ]]; then
 fi
 
 docker run \
-  -d \
   --name runner-ctrl \
+  -d \
   --restart unless-stopped \
   -v /var/run/docker.sock:/var/run/docker.sock \
+  -v /data \
   -e BROKER="$BROKER" \
   -e BACKEND="$BACKEND" \
   -e CONTAINERIZE=1 \
