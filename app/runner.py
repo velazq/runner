@@ -7,7 +7,6 @@ import tempfile
 
 RUNNER_IMAGE = 'python' # Must have python3 in path
 RUNNER_IMAGE_NAME = 'runner-ctrl'
-VOLUME = '/data'
 
 
 if not os.environ.get('BROKER') or not os.environ.get('BACKEND'):
@@ -29,7 +28,8 @@ app = celery.Celery('runner',
                     backend=os.environ['BACKEND'])
 
 def make_temp_file(contents):
-    f = tempfile.NamedTemporaryFile(mode='w', dir=VOLUME, suffix='.py')
+    d = '/data' if containerize else '/tmp'
+    f = tempfile.NamedTemporaryFile(mode='w', dir=d, suffix='.py')
     f.write(contents)
     f.flush()
     return f

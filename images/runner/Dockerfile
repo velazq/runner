@@ -1,8 +1,5 @@
-FROM docker:latest
+FROM alvelazq/runner-base:latest
 
-RUN apk update
-RUN apk add python3 git
-RUN pip3 install -U celery[redis] docker
 RUN git -C / clone https://github.com/velazq/runner.git
 
 WORKDIR /runner/app
