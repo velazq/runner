@@ -1,5 +1,4 @@
 import celery
-import locale
 import os
 import subprocess
 import sys
@@ -25,8 +24,6 @@ if containerize:
         sys.exit(2)
     client = docker.from_env()
 
-encoding = locale.getdefaultlocale()[1]
-
 app = celery.Celery('runner',
                     broker=os.environ['BROKER'],
                     backend=os.environ['BACKEND'])
@@ -44,7 +41,7 @@ def run_and_shutdown(task_id, source_code):
                          stderr=subprocess.PIPE)
     (stdoutdata, stderrdata) = p.communicate()
     subprocess.call('celery control shutdown'.split())
-    return {'task_id': task_id, 'stdout': stdoutdata.decode(encoding)}
+    return {'task_id': task_id, 'stdout': stdoutdata.decode()}
 
 def run_in_container(task_id, source_code):
     f = make_temp_file(source_code)
@@ -52,7 +49,7 @@ def run_in_container(task_id, source_code):
                                  command=['python3', f.name],
                                  volumes_from=[RUNNER_IMAGE_NAME],
                                  remove=True)
-    return {'task_id': task_id, 'stdout': logs.decode(encoding)}
+    return {'task_id': task_id, 'stdout': logs.decode()}
 
 @app.task
 def run(task_id, source_code):
