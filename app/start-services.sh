@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 echo Starting RabbitMQ container...
 docker run -d -p 5672:5672 --restart unless-stopped --name rabbitmq rabbitmq

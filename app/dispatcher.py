@@ -1,23 +1,28 @@
 from __future__ import print_function
+from itertools import *
 
 import os
+import re
 import sys
 
 import runner
 
 
+def get_files(folder, pattern):
+    return (os.path.abspath(os.path.join(dirpath, filename))
+            for (dirpath, dirnames, filenames) in os.walk(folder)
+            for filename in filenames
+            if re.search(pattern, filename))
+
+def dispatch(filepath):
+    with open(filepath, 'r') as f:
+        return runner.run.delay(filepath, f.read())
+
+
 if len(sys.argv) < 2:
-    print('Usage: dispatcher.py <folder_path>')
+    print('Usage: dispatcher.py <folder1> [folder2 ... folderN]')
     sys.exit(1)
 
-def dispatch(dirpath_filename):
-    path = os.path.abspath(os.path.join(*dirpath_filename))
-    with open(path) as f:
-        return runner.run_and_shutdown_worker.delay(path, f.read())
+results = list(map(dispatch, chain.from_iterable(get_files(f, '.py$') for f in sys.argv[1:])))
 
-(dirpath, dirnames, filenames) = next(os.walk(sys.argv[1]))
-
-results = map(dispatch, [(dirpath, filename) for filename in filenames])
-
-for result in results:
-    print(result.get())
+list(map(print, results))

@@ -6,17 +6,13 @@ import subprocess
 import tempfile
 
 
-EXECUTOR_IMAGE = 'alvelazq/runner:latest'
+RUNNER_IMAGE = 'alvelazq/runner:latest'
 INTERNAL_FILE = '/tmp/test.py'
 
-broker = os.environ.get('BROKER')
-default_broker = 'pyamqp://' + os.environ.get('MASTER_IP')
-backend = os.environ.get('BACKEND')
-default_backend = 'redis://' + os.environ.get('MASTER_IP')
 
-app = celery.Celery('runner')
-app.conf.broker_url = broker if broker else default_broker
-app.conf.result_backend = backend if backend else default_backend
+app = celery.Celery('runner',
+                    broker=os.environ['BROKER'],
+                    backend=os.environ['BACKEND'])
 
 encoding = locale.getdefaultlocale()[1]
 
@@ -27,7 +23,7 @@ def make_temp_file(contents):
     return f
 
 @app.task
-def run_and_shutdown_worker(task_id, source_code):
+def run_and_shutdown(task_id, source_code):
     f = make_temp_file(source_code)
     p = subprocess.Popen(['python3', f.name],
                          stdout=subprocess.PIPE,
@@ -47,7 +43,7 @@ def run_in_container(task_id, source_code):
                     {'bind': '/var/run/docker.sock', 'mode': 'rw'},
                f.name:
                     {'bind': INTERNAL_FILE, 'mode': 'r'}}
-    container = client.containers.run(image=EXECUTOR_IMAGE,
+    container = client.containers.run(image=RUNNER_IMAGE,
                                       command=['python3', INTERNAL_FILE],
                                       volumes=volumes,
                                       detach=True,
@@ -60,3 +56,6 @@ def run_in_container(task_id, source_code):
     return {'task_id': task_id,
             'stdout': stdoutdata.decode(encoding),
             'stderr': stderrdata.decode(encoding)}
+
+
+run = run_in_container if os.environ.get('STANDALONE') else run_and_shutdown
