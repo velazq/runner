@@ -1,10 +1,7 @@
 from __future__ import print_function
-from itertools import *
-
 import os
 import re
 import sys
-
 import runner
 
 
@@ -19,10 +16,11 @@ def dispatch(filepath):
         return runner.run.delay(filepath, f.read())
 
 
-if len(sys.argv) < 2:
-    print('Usage: dispatcher.py <folder1> [folder2 ... folderN]')
-    sys.exit(1)
+if __name__ == '__main__':
+    if len(sys.argv) < 2:
+        print('Usage: dispatcher.py <folder1> [folder2 ... folderN]')
+        sys.exit(1)
 
-results = [dispatch(f) for d in sys.argv[1:] for f in get_files(d, '.py$')]
+    results = [dispatch(f) for d in sys.argv[1:] for f in get_files(d, '.py$')]
 
-[print(r.get()) for r in results]
+    [print(r.get()) for r in results]
